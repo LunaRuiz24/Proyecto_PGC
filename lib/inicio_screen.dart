@@ -33,6 +33,7 @@ class _InicioScreenState extends State<InicioScreen> {
       'Calendario Académico': const CalendarioScreen(),
       'Recordatorios': const RecordatoriosScreen(),
       'Sugerencias': const SugerenciasScreen(),
+      'Seguimiento': const SeguimientoScreen()
     };
     final screen = screens[route];
     if (screen != null) Navigator.push(context, _fadeRoute(screen));
