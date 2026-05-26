@@ -1,17 +1,33 @@
-# mi
+# Prototipo de organización diaria para la optimización del tiempo
 
-A new Flutter project.
+Es un prototipo web desarrollada con Flutter que permite a los estudiantes gestionar su tiempo de manera eficiente. La plataforma incluye un calendario académico, sistema de tareas, recordatorios personalizados y sugerencias de actividades para optimizar la productividad diaria.
 
-## Getting Started
+## Despliegue
 
-This project is a starting point for a Flutter application.
+### Requisitos previos
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter SDK (>=3.0.0)
+- Navegador web (Chrome, Edge, Firefox)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### Instalación y ejecución en entorno local
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. **Clonar el repositorio**
+   
+git clone https://github.com/LunaRuiz24/Proyecto_PGC.git
+cd Proyecto_PGC
+
+### Instalar dependencias
+
+- flutter pub get
+
+### Ver datos guardados (localStorage)
+
+- Presiona Ctrl + Shift + I (Windows/Linux) o Cmd + Option + I (Mac) para abrir las herramientas de desarrollador
+
+- Ve a la pestaña Application (Aplicación)
+
+- En el menú lateral, selecciona Local Storage
+
+- Busca la página web 
+
+Ahí verás todos los datos guardados en formato JSON
