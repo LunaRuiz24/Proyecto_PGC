@@ -81,7 +81,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> with TickerProvid
     super.dispose();
   }
 
-  // ✅ CORREGIDO - Usa load() en lugar de loadData(), sin async/await
   void _cargarDatos() {
     setState(() => _loading = true);
     
@@ -100,7 +99,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> with TickerProvid
     _animCtrl.forward();
   }
 
-  // ✅ CORREGIDO - Usa save() en lugar de saveData(), sin async/await
   void _saveTareas() {
     final userId = UserProvider.instance.currentUser?.id;
     if (userId == null) return;
@@ -141,7 +139,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> with TickerProvid
     }[cat] ?? const Color(0xff6c63ff);
   }
 
-  // ✅ CORREGIDO - sin async/await
   void _agregarTarea() {
     if (_tituloCtrl.text.trim().isEmpty) return;
 
@@ -164,7 +161,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> with TickerProvid
     _animCtrl.forward();
   }
 
-  // ✅ CORREGIDO - sin async/await
   void _toggleCompletada(Tarea t) {
     setState(() {
       t.completada = !t.completada;
@@ -174,7 +170,6 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> with TickerProvid
     _animCtrl.forward();
   }
 
-  // ✅ CORREGIDO - sin async/await
   void _deleteTarea(Tarea t) {
     setState(() {
       _tareas.remove(t);

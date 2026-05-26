@@ -136,7 +136,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
     _checkTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkNotifications());
   }
 
-  // ✅ MÉTODO CORREGIDO - Usa load() en lugar de loadData()
   void _loadRecordatorios() {
     setState(() => _isLoading = true);
     
@@ -162,7 +161,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
     setState(() => _isLoading = false);
   }
 
-  // ✅ MÉTODO CORREGIDO - Usa save() en lugar de saveData()
   void _saveRecordatorios() {
     final userId = UserProvider.instance.currentUser?.id;
     if (userId == null) return;

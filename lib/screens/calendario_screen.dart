@@ -68,7 +68,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
     _loadEvents();
   }
 
-  // ✅ CORREGIDO - Usa load() en lugar de loadData(), sin async/await
   void _loadEvents() {
     setState(() => _isLoading = true);
     
@@ -86,7 +85,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
     setState(() => _isLoading = false);
   }
 
-  // ✅ CORREGIDO - Usa save() en lugar de saveData(), sin async/await
   void _saveEvents() {
     final userId = UserProvider.instance.currentUser?.id;
     if (userId == null) return;

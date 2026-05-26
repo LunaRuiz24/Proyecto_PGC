@@ -23,7 +23,6 @@ class StorageService {
     html.window.localStorage.remove(key);
   }
 
-  // ✅ MÉTODO QUE FUNCIONA SEGURO
   List<String> getAllKeys() {
     final keys = <String>[];
     try {

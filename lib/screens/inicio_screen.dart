@@ -275,8 +275,6 @@ class _InicioScreenState extends State<InicioScreen> {
   }
 }
 
-// ─── Widgets auxiliares ───────────────────────────────────────────────────────
-
 class _HeroBtn extends StatelessWidget {
   final String label; final VoidCallback onTap; final bool primary;
   const _HeroBtn({required this.label, required this.onTap, required this.primary});
