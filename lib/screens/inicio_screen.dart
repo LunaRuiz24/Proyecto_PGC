@@ -6,8 +6,8 @@ import 'recordatorios_screen.dart';
 import 'seguimiento_screen.dart';
 import 'sugerencias_screen.dart';
 import 'perfil_screen.dart';
-import 'user_provider.dart';
-import 'theme_provider.dart';
+import '../providers/user_provider.dart';
+import '../providers/theme_provider.dart';
 
 class InicioScreen extends StatefulWidget {
   const InicioScreen({super.key});

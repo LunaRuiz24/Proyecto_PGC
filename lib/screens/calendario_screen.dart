@@ -1,13 +1,38 @@
-// ignore_for_file: unused_import
 import 'package:flutter/material.dart';
-import 'theme_provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/user_provider.dart';
+import '../services/storage_service.dart';
 
 class CalendarioEvent {
   final String id;
   String titulo, hora, duracion, tipo;
   DateTime fecha;
-  CalendarioEvent({required this.id, required this.titulo, required this.fecha,
-      required this.hora, required this.duracion, required this.tipo});
+  CalendarioEvent({
+    required this.id,
+    required this.titulo,
+    required this.fecha,
+    required this.hora,
+    required this.duracion,
+    required this.tipo
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'titulo': titulo,
+    'fecha': fecha.toIso8601String(),
+    'hora': hora,
+    'duracion': duracion,
+    'tipo': tipo,
+  };
+
+  factory CalendarioEvent.fromJson(Map<String, dynamic> json) => CalendarioEvent(
+    id: json['id'],
+    titulo: json['titulo'],
+    fecha: DateTime.parse(json['fecha']),
+    hora: json['hora'],
+    duracion: json['duracion'],
+    tipo: json['tipo'],
+  );
 }
 
 class CalendarioScreen extends StatefulWidget {
@@ -19,9 +44,10 @@ class CalendarioScreen extends StatefulWidget {
 class _CalendarioScreenState extends State<CalendarioScreen> with TickerProviderStateMixin {
   DateTime _focusedMonth = DateTime.now();
   DateTime? _selectedDay;
-  final List<CalendarioEvent> _events = [];
+  List<CalendarioEvent> _events = [];
   bool _showForm = false;
   CalendarioEvent? _editingEvent;
+  bool _isLoading = true;
 
   final _tituloCtrl = TextEditingController();
   final _horaCtrl = TextEditingController();
@@ -30,6 +56,8 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
 
   late AnimationController _formAnimCtrl;
   late Animation<Offset> _formSlide;
+  
+  final StorageService _storage = StorageService();
 
   @override
   void initState() {
@@ -37,10 +65,44 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
     _formAnimCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
     _formSlide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
         .animate(CurvedAnimation(parent: _formAnimCtrl, curve: Curves.easeOutCubic));
+    _loadEvents();
+  }
+
+  // ✅ CORREGIDO - Usa load() en lugar de loadData(), sin async/await
+  void _loadEvents() {
+    setState(() => _isLoading = true);
+    
+    final userId = UserProvider.instance.currentUser?.id;
+    if (userId != null) {
+      final eventsData = _storage.load('${userId}_eventos');
+      if (eventsData != null && eventsData is List) {
+        _events.clear();
+        for (var e in eventsData) {
+          _events.add(CalendarioEvent.fromJson(e));
+        }
+      }
+    }
+    
+    setState(() => _isLoading = false);
+  }
+
+  // ✅ CORREGIDO - Usa save() en lugar de saveData(), sin async/await
+  void _saveEvents() {
+    final userId = UserProvider.instance.currentUser?.id;
+    if (userId == null) return;
+    
+    final eventsJson = _events.map((e) => e.toJson()).toList();
+    _storage.save('${userId}_eventos', eventsJson);
+    print('💾 Eventos guardados: ${_events.length}');
   }
 
   @override
-  void dispose() { _formAnimCtrl.dispose(); _tituloCtrl.dispose(); _horaCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _formAnimCtrl.dispose();
+    _tituloCtrl.dispose();
+    _horaCtrl.dispose();
+    super.dispose();
+  }
 
   List<DateTime> _daysInMonth(DateTime month) {
     final first = DateTime(month.year, month.month, 1);
@@ -55,9 +117,13 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
 
   void _openForm({CalendarioEvent? event, DateTime? date}) {
     setState(() {
-      _editingEvent = event; _formDate = date ?? _selectedDay ?? DateTime.now();
-      _tituloCtrl.text = event?.titulo ?? ''; _horaCtrl.text = event?.hora ?? '';
-      _duracion = event?.duracion ?? '1 hora'; _tipo = event?.tipo ?? 'personal'; _showForm = true;
+      _editingEvent = event;
+      _formDate = date ?? _selectedDay ?? DateTime.now();
+      _tituloCtrl.text = event?.titulo ?? '';
+      _horaCtrl.text = event?.hora ?? '';
+      _duracion = event?.duracion ?? '1 hora';
+      _tipo = event?.tipo ?? 'personal';
+      _showForm = true;
     });
     _formAnimCtrl.forward();
   }
@@ -68,16 +134,31 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
     if (_tituloCtrl.text.isEmpty) return;
     setState(() {
       if (_editingEvent != null) {
-        _editingEvent!..titulo = _tituloCtrl.text..fecha = _formDate..hora = _horaCtrl.text..duracion = _duracion..tipo = _tipo;
+        _editingEvent!.titulo = _tituloCtrl.text;
+        _editingEvent!.fecha = _formDate;
+        _editingEvent!.hora = _horaCtrl.text;
+        _editingEvent!.duracion = _duracion;
+        _editingEvent!.tipo = _tipo;
       } else {
-        _events.add(CalendarioEvent(id: DateTime.now().millisecondsSinceEpoch.toString(),
-            titulo: _tituloCtrl.text, fecha: _formDate, hora: _horaCtrl.text, duracion: _duracion, tipo: _tipo));
+        _events.add(CalendarioEvent(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          titulo: _tituloCtrl.text,
+          fecha: _formDate,
+          hora: _horaCtrl.text,
+          duracion: _duracion,
+          tipo: _tipo,
+        ));
       }
     });
+    _saveEvents();
     _closeForm();
   }
 
-  void _deleteEvent(CalendarioEvent e) { setState(() => _events.remove(e)); _closeForm(); }
+  void _deleteEvent(CalendarioEvent e) {
+    setState(() => _events.remove(e));
+    _saveEvents();
+    _closeForm();
+  }
 
   String _monthName(int m) => ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][m];
@@ -89,6 +170,12 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final dark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = dark ? const Color(0xff1a2535) : Colors.white;
     final textColor = dark ? Colors.white : const Color(0xff1a1a2e);
@@ -103,7 +190,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
         Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
             colors: dark ? [const Color(0xff0d1b2a), const Color(0xff1a0533)] : [const Color(0xffe8f0ff), const Color(0xfff8f0ff)]))),
         SafeArea(child: Row(children: [
-          // Calendar panel
           Expanded(child: Column(children: [
             Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 0), child: Row(children: [
               IconButton(onPressed: () => Navigator.pop(context),
@@ -121,7 +207,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
             const SizedBox(height: 16),
             Divider(color: dark ? Colors.white12 : Colors.black12),
             const SizedBox(height: 12),
-            // Month nav
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               IconButton(icon: Icon(Icons.chevron_left, color: textColor),
                   onPressed: () => setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1))),
@@ -131,7 +216,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
                   onPressed: () => setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1))),
             ]),
             const SizedBox(height: 12),
-            // Calendar grid
             Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Container(
               decoration: BoxDecoration(color: cardBg.withOpacity(0.7), borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: dark ? Colors.white10 : Colors.black.withOpacity(0.06))),
@@ -176,7 +260,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
                 )),
               ]),
             ))),
-            // Selected day events
             if (_selectedDay != null) ...[
               const SizedBox(height: 12),
               Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Row(children: [
@@ -210,8 +293,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
             ],
             const SizedBox(height: 16),
           ])),
-
-          // Form panel
           if (_showForm) SlideTransition(position: _formSlide, child: _buildFormPanel(dark, textColor, subText, cardBg)),
         ])),
       ]),
@@ -318,4 +399,3 @@ class _CalendarioScreenState extends State<CalendarioScreen> with TickerProvider
         )),
       );
 }
-

@@ -1,7 +1,5 @@
 name: proyecto_pgc
-
-description: Proyecto Flutter
-
+description: Proyecto Flutter - Amigo en Común
 publish_to: none
 
 version: 1.0.0+1
@@ -12,24 +10,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # UI
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.1.1
-
-  # Networking
-  http: ^1.2.1
-
-  # Storage
-  shared_preferences: ^2.5.5
-  flutter_secure_storage: ^10.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
-

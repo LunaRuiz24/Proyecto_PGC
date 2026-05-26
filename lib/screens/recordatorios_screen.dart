@@ -1,6 +1,7 @@
-// ignore_for_file: unused_import
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../providers/user_provider.dart';
+import '../services/storage_service.dart';
 
 class Recordatorio {
   final String id;
@@ -22,7 +23,6 @@ class Recordatorio {
   });
 }
 
-// Simple in-app notification overlay
 class NotifManager {
   static OverlayEntry? _current;
 
@@ -116,13 +116,15 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
   late AnimationController _formCtrl;
   late Animation<Offset> _formSlide;
   Timer? _checkTimer;
+  bool _isLoading = true;
 
-  // Form state
   final _tituloCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _horaCtrl = TextEditingController();
   DateTime _formDate = DateTime.now();
   String _categoria = 'personal';
+
+  final StorageService _storage = StorageService();
 
   @override
   void initState() {
@@ -130,9 +132,52 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
     _formCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
     _formSlide = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
         .animate(CurvedAnimation(parent: _formCtrl, curve: Curves.easeOutCubic));
-
-    // Check reminders every minute
+    _loadRecordatorios();
     _checkTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkNotifications());
+  }
+
+  // ✅ MÉTODO CORREGIDO - Usa load() en lugar de loadData()
+  void _loadRecordatorios() {
+    setState(() => _isLoading = true);
+    
+    final userId = UserProvider.instance.currentUser?.id;
+    if (userId != null) {
+      final recordatoriosData = _storage.load('${userId}_recordatorios');
+      if (recordatoriosData != null && recordatoriosData is List) {
+        _recordatorios.clear();
+        for (var r in recordatoriosData) {
+          _recordatorios.add(Recordatorio(
+            id: r['id'],
+            titulo: r['titulo'],
+            descripcion: r['descripcion'],
+            fecha: DateTime.parse(r['fecha']),
+            hora: r['hora'],
+            completado: r['completado'] ?? false,
+            categoria: r['categoria'] ?? 'personal',
+          ));
+        }
+      }
+    }
+    
+    setState(() => _isLoading = false);
+  }
+
+  // ✅ MÉTODO CORREGIDO - Usa save() en lugar de saveData()
+  void _saveRecordatorios() {
+    final userId = UserProvider.instance.currentUser?.id;
+    if (userId == null) return;
+    
+    final recordatoriosJson = _recordatorios.map((r) => {
+      'id': r.id,
+      'titulo': r.titulo,
+      'descripcion': r.descripcion,
+      'fecha': r.fecha.toIso8601String(),
+      'hora': r.hora,
+      'completado': r.completado,
+      'categoria': r.categoria,
+    }).toList();
+    
+    _storage.save('${userId}_recordatorios', recordatoriosJson);
   }
 
   @override
@@ -193,7 +238,22 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
         categoria: _categoria,
       ));
     });
+    _saveRecordatorios();
     _closeForm();
+  }
+
+  void _toggleCompletado(Recordatorio r) {
+    setState(() {
+      r.completado = !r.completado;
+    });
+    _saveRecordatorios();
+  }
+
+  void _deleteRecordatorio(Recordatorio r) {
+    setState(() {
+      _recordatorios.remove(r);
+    });
+    _saveRecordatorios();
   }
 
   Color _catColor(String cat) {
@@ -218,6 +278,12 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final dark = Theme.of(context).brightness == Brightness.dark;
     final textColor = dark ? Colors.white : const Color(0xff1a1a2e);
     final subText = dark ? Colors.white54 : Colors.black45;
@@ -243,7 +309,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
             children: [
               Column(
                 children: [
-                  // Header
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Row(
@@ -264,7 +329,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
                   Divider(color: dark ? Colors.white12 : Colors.black12),
                   const SizedBox(height: 12),
 
-                  // Add button
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: GestureDetector(
@@ -293,7 +357,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
                   const SizedBox(height: 16),
                   Divider(color: dark ? Colors.white12 : Colors.black12),
 
-                  // Content
                   Expanded(
                     child: _recordatorios.isEmpty
                         ? _buildEmptyState(dark)
@@ -317,7 +380,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
                           ),
                   ),
 
-                  // Back button
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: OutlinedButton.icon(
@@ -334,8 +396,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
                   ),
                 ],
               ),
-
-              // Form overlay
               if (_showForm)
                 GestureDetector(
                   onTap: _closeForm,
@@ -363,11 +423,7 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        image: const DecorationImage(
-          image: AssetImage('images/Calendario1.jpg'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
-        ),
+        color: Colors.grey[800]?.withOpacity(0.5),
       ),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -396,7 +452,7 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
         ),
         child: const Icon(Icons.delete_outline, color: Colors.red),
       ),
-      onDismissed: (_) => setState(() => _recordatorios.remove(r)),
+      onDismissed: (_) => _deleteRecordatorio(r),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
@@ -440,7 +496,6 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Test notification button
               if (!r.completado)
                 IconButton(
                   icon: const Icon(Icons.notifications_active_outlined, size: 20),
@@ -451,7 +506,7 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> with TickerPr
               Checkbox(
                 value: r.completado,
                 activeColor: const Color(0xff6c63ff),
-                onChanged: (v) => setState(() => r.completado = v ?? false),
+                onChanged: (v) => _toggleCompletado(r),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
             ],

@@ -1,9 +1,10 @@
-// main.dart
 import 'package:flutter/material.dart';
-import 'inicio_screen.dart';
-import 'theme_provider.dart';
+import 'screens/inicio_screen.dart';
+import 'providers/theme_provider.dart';
+import 'providers/user_provider.dart';
 
 void main() {
+  UserProvider.instance.loadAllUsers();
   runApp(const MiApp());
 }
 
@@ -19,6 +20,7 @@ class _MiAppState extends State<MiApp> {
   void initState() {
     super.initState();
     ThemeProvider.instance.addListener(() => setState(() {}));
+    UserProvider.instance.addListener(() => setState(() {}));
   }
 
   @override
@@ -29,7 +31,6 @@ class _MiAppState extends State<MiApp> {
       themeMode: ThemeProvider.instance.themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
-        fontFamily: 'Roboto',
         colorScheme: const ColorScheme.light(
           primary: Color(0xff6c63ff),
           secondary: Color(0xffb06aff),
@@ -37,7 +38,6 @@ class _MiAppState extends State<MiApp> {
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        fontFamily: 'Roboto',
         scaffoldBackgroundColor: const Color(0xff0d1b2a),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xff6c63ff),

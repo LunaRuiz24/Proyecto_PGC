@@ -1,6 +1,6 @@
 // ignore_for_file: unused_import
 import 'package:flutter/material.dart';
-import 'user_provider.dart';
+import '../providers/user_provider.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});

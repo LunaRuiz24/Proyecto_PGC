@@ -1,6 +1,5 @@
-// ignore_for_file: unused_import
 import 'package:flutter/material.dart';
-import 'user_provider.dart';
+import '../providers/user_provider.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,11 +13,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
-  // Login controllers
-  final _loginEmailCtrl = TextEditingController();
+  final _loginUsernameCtrl = TextEditingController();
   final _loginPassCtrl = TextEditingController();
 
-  // Register controllers
   final _regNameCtrl = TextEditingController();
   final _regCarreraCtrl = TextEditingController();
   final _regEmailCtrl = TextEditingController();
@@ -28,6 +25,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   bool _obscureLogin = true;
   bool _obscureReg = true;
   String? _error;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -40,7 +38,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _animController.dispose();
-    _loginEmailCtrl.dispose();
+    _loginUsernameCtrl.dispose();
     _loginPassCtrl.dispose();
     _regNameCtrl.dispose();
     _regCarreraCtrl.dispose();
@@ -61,21 +59,24 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   void _handleLogin() {
-    final email = _loginEmailCtrl.text.trim();
+    final username = _loginUsernameCtrl.text.trim();
     final pass = _loginPassCtrl.text.trim();
-    if (email.isEmpty || pass.isEmpty) {
+    
+    if (username.isEmpty || pass.isEmpty) {
       setState(() => _error = 'Por favor completa todos los campos');
       return;
     }
-    final user = UserProvider.instance.login(email, pass);
+    
+    final user = UserProvider.instance.loginByFullName(username, pass);
+    
     if (user == null) {
-      setState(() => _error = 'Correo o contraseña incorrectos');
+      setState(() => _error = 'Usuario o contraseña incorrectos');
       return;
     }
     Navigator.pop(context);
   }
 
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     final name = _regNameCtrl.text.trim();
     final carrera = _regCarreraCtrl.text.trim();
     final email = _regEmailCtrl.text.trim();
@@ -90,14 +91,27 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       setState(() => _error = 'Correo electrónico inválido');
       return;
     }
-    final ok = UserProvider.instance.register(
-      nombre: name, carrera: carrera, email: email, password: pass, hobbies: hobbies,
+    
+    setState(() => _isLoading = true);
+    
+    final ok = await UserProvider.instance.register(
+      nombre: name,
+      carrera: carrera,
+      email: email,
+      password: pass,
+      hobbies: hobbies,
     );
+    
+    setState(() => _isLoading = false);
+    
     if (!ok) {
       setState(() => _error = 'Este correo ya está registrado');
       return;
     }
-    Navigator.pop(context);
+    
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -141,7 +155,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Logo
                         Center(
                           child: Container(
                             width: 64, height: 64,
@@ -229,7 +242,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   List<Widget> _buildLoginFields(bool dark) => [
-    _buildField(ctrl: _loginEmailCtrl, label: 'Correo electrónico', icon: Icons.email_outlined, dark: dark),
+    _buildField(ctrl: _loginUsernameCtrl, label: 'Tu nombre completo', icon: Icons.person_outline, dark: dark),
     const SizedBox(height: 14),
     _buildField(
       ctrl: _loginPassCtrl, label: 'Contraseña', icon: Icons.lock_outline, dark: dark,
@@ -307,10 +320,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ],
         ),
         child: Center(
-          child: Text(
-            _isLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          child: _isLoading
+              ? const CircularProgressIndicator(color: Colors.white)
+              : Text(
+                  _isLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
         ),
       ),
     );
